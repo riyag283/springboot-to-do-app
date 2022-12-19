@@ -1,5 +1,9 @@
 package com.myApp.todoapp.models;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Document(collation = "todos")
 public class ToDo {
     public ToDo(Long id, String task, boolean completed) {
         this.id = id;
@@ -7,6 +11,7 @@ public class ToDo {
         this.completed = completed;
     }
 
+    @Id
     private Long id;
     private String task;
 
