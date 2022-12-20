@@ -1,15 +1,18 @@
 package com.myApp.todoapp.controller;
 
 import com.myApp.todoapp.entity.ToDo;
+import com.myApp.todoapp.exception.ToDoCollectionException;
 import com.myApp.todoapp.repository.ToDoRepository;
-import com.myApp.todoapp.service.SequenceGeneratorService;
+import com.myApp.todoapp.service.ToDoService;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-
-import static com.myApp.todoapp.entity.ToDo.SEQUENCE_NAME;
+import java.util.Optional;
 
 @SpringBootApplication
 @RestController
@@ -18,29 +21,64 @@ public class ToDoController {
 
     @Autowired
     private ToDoRepository toDoRepository;
-
     @Autowired
-    private SequenceGeneratorService service;
+    private ToDoService toDoService;
 
     @PostMapping
-    public ToDo addToDo(@RequestBody ToDo toDo) {
-        toDo.setId((service.getSequenceNumber(SEQUENCE_NAME)));
-        return toDoRepository.save(toDo);
+    public ResponseEntity<?> addToDo(@RequestBody ToDo toDo) {
+        try {
+            ToDo _toDo = toDoService.createToDo(toDo);
+            return new ResponseEntity<ToDo>(_toDo, HttpStatus.CREATED);
+        } catch (ConstraintViolationException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY);
+        } catch (ToDoCollectionException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @GetMapping
-    public List<ToDo> getToDos() {
-        return toDoRepository.findAll();
+    public ResponseEntity<?> getToDos(@RequestParam(value = "id", required = false) Long id) {
+        try {
+            if (id != null) {
+                Optional<ToDo> _todo = toDoRepository.findById(id);
+                if(_todo.isPresent()){
+                    return new ResponseEntity<>(_todo, HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>("ToDo not found with id:" + id, HttpStatus.NOT_FOUND);
+                }
+            }
+            List<ToDo> toDos = toDoRepository.findAll();
+            if(toDos.size() > 0) {
+                return new ResponseEntity<List<ToDo>>(toDos, HttpStatus.OK);
+            }
+            else {
+                return new ResponseEntity<>("No ToDos available", HttpStatus.NOT_FOUND);
+            }
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PutMapping("/{id}")
-    public ToDo updateToDo(@PathVariable Long id, @RequestBody ToDo toDo) {
-        toDo.setId(id);
-        return toDoRepository.save(toDo);
+    public ResponseEntity<?> updateToDo(@PathVariable Long id, @RequestBody ToDo toDo) {
+        try {
+            toDo.setId(id);
+            ToDo _toDo = toDoRepository.save(toDo);
+            return new ResponseEntity<ToDo>(_toDo, HttpStatus.NO_CONTENT);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @DeleteMapping("/{id}")
-    public void deleteToDo(@PathVariable Long id) {
-        toDoRepository.deleteById(id);
+    public ResponseEntity<?> deleteToDo(@PathVariable Long id) {
+        try {
+            toDoRepository.deleteById(id);
+            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
