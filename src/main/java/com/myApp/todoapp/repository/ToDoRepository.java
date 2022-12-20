@@ -1,6 +1,6 @@
 package com.myApp.todoapp.repository;
 
-import com.myApp.todoapp.models.ToDo;
+import com.myApp.todoapp.entity.ToDo;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
