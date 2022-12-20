@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,22 +62,38 @@ public class ToDoController {
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateToDo(@PathVariable Long id, @RequestBody ToDo toDo) {
+    @PutMapping
+    public ResponseEntity<?> updateToDo(@RequestParam("id") Long id, @RequestBody ToDo toDo) {
         try {
-            toDo.setId(id);
-            ToDo _toDo = toDoRepository.save(toDo);
-            return new ResponseEntity<ToDo>(_toDo, HttpStatus.NO_CONTENT);
+            Optional<ToDo> toDoOptional = toDoRepository.findById(id);
+            if(toDoOptional.isPresent()){
+                ToDo toDoToSave = toDoOptional.get();
+                toDoToSave.setTask(toDo.getTask() != null ? toDo.getTask() : toDoToSave.getTask());
+                toDoToSave.setCompleted(toDo.isCompleted() ? true : toDoToSave.isCompleted());
+                toDoToSave.setUpdatedAt(new Date(System.currentTimeMillis()));
+                toDoToSave.setDeadline(toDo.getDeadline() != null ? toDo.getDeadline() : toDoToSave.getDeadline());
+                toDoToSave.setTaskDescription(toDo.getTaskDescription() != null ? toDo.getTaskDescription() :
+                        toDoToSave.getTaskDescription());
+                toDoRepository.save(toDoToSave);
+                return new ResponseEntity<ToDo>(toDoToSave, HttpStatus.NO_CONTENT);
+            } else {
+                return new ResponseEntity<>("ToDo not found with id:" + id, HttpStatus.NOT_FOUND);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteToDo(@PathVariable Long id) {
+    @DeleteMapping
+    public ResponseEntity<?> deleteToDo(@RequestParam("id") Long id) {
         try {
-            toDoRepository.deleteById(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            Optional<ToDo> toDoOptional = toDoRepository.findById(id);
+            if(toDoOptional.isPresent()){
+                toDoRepository.deleteById(id);
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            } else {
+                return new ResponseEntity<>("ToDo not found with id:" + id, HttpStatus.NOT_FOUND);
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
         }

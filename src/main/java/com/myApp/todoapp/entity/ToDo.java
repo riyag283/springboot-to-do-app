@@ -4,10 +4,11 @@ import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
 
-import javax.persistence.Column;
 import javax.persistence.Transient;
 import java.util.Date;
 
@@ -24,7 +25,6 @@ public class ToDo {
     @NotNull(message = "todo Task cannot be null")
     private String task;
     private String taskDescription;
-    @Column(columnDefinition = "boolean default true")
     private boolean completed;
     private Date createdAt;
     private Date updatedAt;
